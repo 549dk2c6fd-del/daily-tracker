@@ -508,7 +508,236 @@ function save(){
   }
 }
 
-/* ================= 业务计算 ================= */
+/* ================= 食物热量库（按常见一份估算，可手动修改） ================= */
+const FOOD_DB = [
+  ['白米饭','1 碗（约 150g）',174,['米饭','白饭','大米饭','饭']],
+  ['糙米饭','1 碗（约 150g）',165,['糙米']],
+  ['杂粮饭','1 碗（约 150g）',170,[]],
+  ['面条','1 碗（约 200g）',280,['汤面','拉面','面']],
+  ['牛肉面','1 碗',550,['牛肉拉面','红烧牛肉面']],
+  ['炒面','1 份（约 300g）',580,['干炒牛河']],
+  ['意大利面','1 份（约 250g）',400,['意面','pasta']],
+  ['米线','1 碗',350,['过桥米线']],
+  ['米粉','1 碗',330,['河粉','汤粉']],
+  ['馒头','1 个（约 100g）',223,['白馒头']],
+  ['花卷','1 个（约 80g）',190,[]],
+  ['包子','1 个（约 100g）',250,['肉包','肉包子']],
+  ['素包子','1 个',180,['菜包','素包']],
+  ['小笼包','6 个',400,['一笼小笼包']],
+  ['生煎','4 个',450,['生煎包']],
+  ['饺子','10 个',400,['水饺','猪肉饺子','蒸饺']],
+  ['馄饨','10 个',300,['云吞','抄手']],
+  ['白粥','1 碗（约 250g）',90,['大米粥','稀饭']],
+  ['小米粥','1 碗（约 250g）',110,[]],
+  ['燕麦粥','1 碗（约 250g）',150,['燕麦']],
+  ['皮蛋瘦肉粥','1 碗',180,['瘦肉粥']],
+  ['炒饭','1 份（约 300g）',550,['蛋炒饭','扬州炒饭']],
+  ['手抓饼','1 个',350,[]],
+  ['煎饼果子','1 个',450,['煎饼']],
+  ['全麦面包','1 片（约 35g）',90,['全麦吐司']],
+  ['吐司','1 片（约 35g）',95,['白吐司','切片面包']],
+  ['面包','1 个（约 80g）',200,['小面包','牛角包']],
+  ['油条','1 根（约 60g）',230,[]],
+  ['红薯','1 个（约 150g）',130,['地瓜','烤红薯']],
+  ['紫薯','1 个（约 150g）',125,[]],
+  ['玉米','1 根（约 200g）',170,['玉米棒','甜玉米']],
+  ['土豆','1 个（约 150g）',115,['马铃薯']],
+  ['山药','1 份（约 150g）',90,[]],
+
+  ['鸡蛋','1 个（约 50g）',78,['水煮蛋','白煮蛋','煮鸡蛋','炒鸡蛋','煎鸡蛋']],
+  ['煎蛋','1 个',120,['荷包蛋','太阳蛋']],
+  ['茶叶蛋','1 个',85,[]],
+  ['蒸蛋','1 碗',90,['鸡蛋羹','水蒸蛋']],
+  ['卤蛋','1 个',90,[]],
+  ['鸡胸肉','1 份（约 100g）',133,['鸡胸','水煮鸡胸']],
+  ['鸡腿','1 个（约 100g）',181,['鸡腿肉','烤鸡腿']],
+  ['鸡翅','1 个（约 40g）',90,['烤鸡翅']],
+  ['炸鸡','1 块',250,['炸鸡块','鸡米花']],
+  ['牛肉','1 份（约 100g）',190,['牛腱','瘦牛肉']],
+  ['牛排','1 份（约 150g）',300,['西冷','眼肉']],
+  ['猪肉','1 份（约 100g）',155,['猪里脊','里脊']],
+  ['五花肉','1 份（约 100g）',395,[]],
+  ['排骨','1 份（约 100g）',320,['猪排骨']],
+  ['三文鱼','1 份（约 100g）',208,['鲑鱼']],
+  ['鱼','1 份（约 100g）',120,['鱼肉','清蒸鱼','鲈鱼','烤鱼']],
+  ['虾','1 份（约 100g）',101,['白灼虾','基围虾','虾仁','大虾']],
+  ['蟹','1 只',95,['螃蟹']],
+  ['豆腐','1 块（约 100g）',82,['嫩豆腐','北豆腐']],
+  ['豆干','1 份（约 100g）',140,['香干']],
+  ['豆浆','1 杯（250ml）',60,['无糖豆浆']],
+  ['火腿肠','1 根',130,[]],
+  ['培根','1 片',90,[]],
+  ['午餐肉','1 份（约 50g）',280,[]],
+  ['鸡胸沙拉','1 份',250,['鸡肉沙拉','健身餐']],
+  ['沙拉','1 份',80,['蔬菜沙拉','轻食','沙拉碗']],
+  ['蛋白粉','1 勺',120,[]],
+
+  ['西兰花','1 份（约 150g）',50,['西蓝花']],
+  ['青菜','1 份（约 150g）',30,['小白菜','上海青']],
+  ['生菜','1 份（约 100g）',15,[]],
+  ['菠菜','1 份（约 150g）',35,[]],
+  ['白菜','1 份（约 150g）',25,['大白菜']],
+  ['番茄','1 个（约 150g）',25,['西红柿']],
+  ['黄瓜','1 根（约 200g）',30,[]],
+  ['胡萝卜','1 根（约 100g）',40,[]],
+  ['蘑菇','1 份（约 100g）',25,['香菇','菌菇']],
+  ['茄子','1 份（约 150g）',40,[]],
+  ['豆角','1 份（约 150g）',45,['四季豆']],
+  ['莲藕','1 份（约 100g）',70,['藕']],
+  ['海带','1 份（约 100g）',20,[]],
+  ['炒青菜','1 份',90,['清炒时蔬','炒时蔬']],
+  ['蒜蓉西兰花','1 份',90,[]],
+  ['土豆丝','1 份',160,['炒土豆丝']],
+  ['凉拌黄瓜','1 份',60,['拍黄瓜']],
+  ['蔬菜汤','1 碗',60,['蛋花汤','紫菜蛋花汤']],
+  ['番茄蛋汤','1 碗',80,['西红柿蛋汤']],
+
+  ['番茄炒蛋','1 份',180,['西红柿炒蛋','番茄炒鸡蛋']],
+  ['宫保鸡丁','1 份',320,[]],
+  ['鱼香肉丝','1 份',300,[]],
+  ['麻婆豆腐','1 份',260,[]],
+  ['青椒肉丝','1 份',250,[]],
+  ['糖醋排骨','1 份',420,[]],
+  ['红烧肉','1 份',480,[]],
+  ['回锅肉','1 份',400,[]],
+  ['红烧茄子','1 份',280,[]],
+  ['地三鲜','1 份',320,[]],
+  ['可乐鸡翅','1 份',300,[]],
+  ['酸菜鱼','1 份',350,[]],
+  ['水煮鱼','1 份',420,[]],
+  ['辣子鸡','1 份',380,[]],
+  ['小炒肉','1 份',350,['农家小炒肉']],
+  ['蒜苔炒肉','1 份',280,[]],
+  ['干锅花菜','1 份',240,[]],
+  ['卤肉饭','1 份',600,[]],
+  ['盖浇饭','1 份',620,['盖饭']],
+  ['咖喱饭','1 份',600,['咖喱鸡饭']],
+  ['鸡排饭','1 份',700,['炸鸡排饭']],
+  ['麻辣烫','1 份',600,[]],
+  ['火锅','1 人份',900,[]],
+  ['烧烤','1 人份',500,['烤串']],
+  ['寿司','6 个',300,[]],
+  ['饭团','1 个',200,[]],
+  ['三明治','1 个',300,[]],
+  ['汉堡','1 个',500,['汉堡包']],
+  ['薯条','1 份（中）',340,[]],
+  ['披萨','1 块',280,['比萨']],
+
+  ['苹果','1 个（约 200g）',105,['红苹果']],
+  ['香蕉','1 根（约 120g）',105,[]],
+  ['橙子','1 个',62,['橙']],
+  ['橘子','1 个',45,['桔子','砂糖橘']],
+  ['草莓','1 盒（约 150g）',48,[]],
+  ['蓝莓','1 盒（约 100g）',57,[]],
+  ['西瓜','1 块（约 300g）',90,[]],
+  ['葡萄','1 串（约 150g）',65,['提子']],
+  ['猕猴桃','1 个',45,['奇异果']],
+  ['梨','1 个',90,['雪梨']],
+  ['芒果','1 个',100,[]],
+  ['桃子','1 个',60,['桃']],
+  ['火龙果','1 个',60,[]],
+  ['圣女果','10 颗',30,['小番茄','千禧果']],
+  ['牛油果','1 个',160,['鳄梨']],
+
+  ['美式咖啡','1 杯',5,['黑咖啡','美式']],
+  ['拿铁','1 杯',150,['拿铁咖啡']],
+  ['奶茶','1 杯（500ml）',350,['珍珠奶茶','波霸奶茶']],
+  ['可乐','1 罐（330ml）',140,['可口可乐','百事可乐']],
+  ['无糖可乐','1 罐（330ml）',0,['零度可乐']],
+  ['雪碧','1 罐（330ml）',130,[]],
+  ['果汁','1 杯',120,['橙汁','苹果汁']],
+  ['牛奶','1 杯（250ml）',160,['纯牛奶']],
+  ['酸奶','1 杯（约 150g）',100,[]],
+  ['无糖酸奶','1 杯（约 150g）',70,[]],
+  ['豆奶','1 杯（250ml）',90,[]],
+  ['啤酒','1 罐（330ml）',150,[]],
+  ['气泡水','1 瓶',0,[]],
+  ['水','1 杯',0,['矿泉水','白开水']],
+
+  ['薯片','1 包（约 50g）',270,[]],
+  ['巧克力','1 块（约 20g）',110,[]],
+  ['坚果','1 小把（约 25g）',150,['混合坚果','每日坚果']],
+  ['饼干','3 块',130,[]],
+  ['蛋糕','1 块',300,['奶油蛋糕']],
+  ['冰淇淋','1 个',200,['雪糕','冰激凌']],
+  ['蛋挞','1 个',200,[]],
+  ['泡面','1 桶',450,['方便面','速食面']],
+  ['辣条','1 包',150,[]],
+  ['果冻','1 个',60,[]],
+  ['爆米花','1 份',150,[]]
+];
+
+function normFood(s){
+  return String(s == null ? '' : s).toLowerCase()
+    .replace(/[\s,，。、;；:：!！?？()（）\[\]【】\-_/\\·"'”“]/g, '');
+}
+
+/* 按菜名找最匹配的一条；返回 { name, portion, kcal, hit } */
+function lookupFood(text){
+  const q = normFood(text);
+  if(!q || q.length < 2) return null;
+  let best = null, bestLen = 0;
+  for(let i = 0; i < FOOD_DB.length; i++){
+    const it = FOOD_DB[i];
+    const names = [it[0]].concat(it[3] || []);
+    for(let j = 0; j < names.length; j++){
+      const nn = normFood(names[j]);
+      if(!nn) continue;
+      if(q === nn){
+        if(nn.length > bestLen || !best){
+          best = { name: it[0], portion: it[1], kcal: it[2], hit: names[j], exact: true };
+          bestLen = nn.length;
+        }
+      }else if(nn.length >= 2 && q.indexOf(nn) > -1 && nn.length > bestLen && !(best && best.exact)){
+        best = { name: it[0], portion: it[1], kcal: it[2], hit: names[j], exact: false };
+        bestLen = nn.length;
+      }
+    }
+  }
+  return best;
+}
+
+/* 在整段描述里找出所有食物，按长匹配优先去重叠，累加热量 */
+function estimateFoods(text){
+  const q = normFood(text);
+  if(!q || q.length < 2) return [];
+  const cands = [];
+  for(let i = 0; i < FOOD_DB.length; i++){
+    const it = FOOD_DB[i];
+    const names = [it[0]].concat(it[3] || []);
+    for(let j = 0; j < names.length; j++){
+      const nn = normFood(names[j]);
+      if(nn.length < 2) continue;
+      let idx = q.indexOf(nn);
+      while(idx > -1){
+        cands.push({ start: idx, end: idx + nn.length, len: nn.length, name: it[0], portion: it[1], kcal: it[2] });
+        idx = q.indexOf(nn, idx + 1);
+      }
+    }
+  }
+  if(!cands.length) return [];
+  cands.sort((a, b) => (b.len - a.len) || (a.start - b.start));
+  const used = [];
+  const picked = [];
+  for(let i = 0; i < cands.length; i++){
+    const c = cands[i];
+    let overlap = false;
+    for(let j = 0; j < used.length; j++){
+      if(c.start < used[j].end && c.end > used[j].start){ overlap = true; break; }
+    }
+    if(!overlap){ used.push(c); picked.push(c); }
+  }
+  picked.sort((a, b) => a.start - b.start);
+  const seen = {}, out = [];
+  for(let i = 0; i < picked.length; i++){
+    const p = picked[i];
+    if(seen[p.name]) continue;
+    seen[p.name] = 1;
+    out.push({ name: p.name, portion: p.portion, kcal: p.kcal });
+  }
+  return out;
+}
+
 const MEALS = [
   { key: 'breakfast', name: '早餐', icon: 'sun' },
   { key: 'lunch', name: '午餐', icon: 'bowl' },
@@ -1416,6 +1645,55 @@ async function callAI(offset){
     btn.innerHTML = old;
   }
 }
+/* 根据照片 + 菜名，用视觉模型估算热量 */
+async function aiEstimatePhoto(){
+  const cfg = S.ai || {};
+  if(!cfg.base || !cfg.key || !cfg.model){ toast('先在设置里配置 AI 接口'); return; }
+  if(!tmp.photo){ toast('先选一张照片'); return; }
+  const btn = document.querySelector('[data-act="ai-vision"]');
+  const old = btn ? btn.innerHTML : '';
+  if(btn){ btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> 识别中…'; }
+  const note = $('#mNote') ? $('#mNote').value.trim() : '';
+  const prompt = '这是一张饮食照片。请识别图中的食物与大致分量，估算总热量。只输出 JSON，不要任何其他文字，格式：{"items":[{"name":"食物名","kcal":数字}],"total":数字}。' + (note ? '用户补充说明：' + note + '。' : '');
+  try{
+    const res = await fetch(cfg.base.replace(/\/+$/, '') + '/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + cfg.key },
+      body: JSON.stringify({
+        model: cfg.model,
+        temperature: 0.2,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'text', text: prompt },
+            { type: 'image_url', image_url: { url: tmp.photo } }
+          ]
+        }]
+      })
+    });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const txt = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
+    const m = txt.match(/\{[\s\S]*\}/);
+    if(!m) throw new Error('返回内容无法解析');
+    const obj = JSON.parse(m[0]);
+    const total = Math.round(num(obj.total) || (obj.items || []).reduce((a, x) => a + num(x.kcal), 0));
+    if(!total) throw new Error('没识别出热量');
+    const names = (obj.items || []).map(x => x.name).filter(Boolean).join(' + ');
+    const kEl = $('#mKcal');
+    if(kEl){ kEl.value = total; kEl.dataset.auto = '0'; }
+    const nEl = $('#mNote');
+    if(nEl && names && !nEl.value.trim()) nEl.value = names;
+    const tip = $('#foodTip');
+    if(tip){ tip.style.display = 'block'; tip.innerHTML = 'AI 估算 ≈ <b>' + total + ' kcal</b>，请按实际分量修改'; }
+    toast('AI 估算完成，记得核对');
+  }catch(err){
+    toast('识别失败：' + (err.message || '当前模型可能不支持图片输入'));
+  }finally{
+    if(btn){ btn.disabled = false; btn.innerHTML = old; }
+  }
+}
+
 /* 渲染周报时恢复上次 AI 结果 */
 const __renderReport = renderReport;
 renderReport = function(){
@@ -1428,8 +1706,10 @@ renderReport = function(){
 
 /* ================= 弹层 ================= */
 let tmp = { photo: null, habitIcon: 'check', mealKey: '', mealDate: '', snackIdx: -1 };
+let __closeTimer = null;
 
 function openSheet(html){
+  clearTimeout(__closeTimer);
   const sh = $('#sheet');
   sh.innerHTML = '<div class="sheet-handle"></div>' + html;
   $('#sheetMask').classList.add('on');
@@ -1438,7 +1718,8 @@ function openSheet(html){
 function closeSheet(){
   $('#sheet').classList.remove('on');
   $('#sheetMask').classList.remove('on');
-  setTimeout(() => { if(!$('#sheet').classList.contains('on')) $('#sheet').innerHTML = ''; }, 320);
+  clearTimeout(__closeTimer);
+  __closeTimer = setTimeout(() => { if(!$('#sheet').classList.contains('on')) $('#sheet').innerHTML = ''; }, 320);
 }
 
 function openWeightSheet(){
@@ -1487,12 +1768,14 @@ function openMealSheet(date, key, idx){
       '</div>' +
       '<div class="hint">照片会自动压缩，不会占用太多空间。</div>' +
     '</div>' +
-    '<div class="field"><label>热量（kcal，可自行填写）</label>' +
-      '<input class="input" id="mKcal" type="number" min="0" max="5000" inputmode="numeric" placeholder="大概多少卡？" value="' + (item && num(item.kcal) ? num(item.kcal) : '') + '">' +
-      '<div class="chips" style="margin-top:9px">' + quick.map(k => '<button class="chip" data-act="quick-kcal" data-k="' + k + '">' + k + '</button>').join('') + '</div>' +
+    '<div class="field"><label>吃了什么（填菜名会自动估算热量）</label>' +
+      '<textarea class="input" id="mNote" placeholder="例如：番茄炒蛋 + 半碗米饭">' + esc(item && item.note ? item.note : '') + '</textarea>' +
+      '<div class="hint" id="foodTip" style="display:none;color:#3C8A6A"></div>' +
     '</div>' +
-    '<div class="field"><label>吃了什么（可选）</label>' +
-      '<textarea class="input" id="mNote" placeholder="例如：鸡胸肉沙拉 + 半个玉米 + 无糖豆浆">' + esc(item && item.note ? item.note : '') + '</textarea>' +
+    '<div class="field"><label>热量（kcal，可自行修改）</label>' +
+      '<input class="input" id="mKcal" type="number" min="0" max="5000" inputmode="numeric" placeholder="填菜名后自动估算，也可自己写" value="' + (item && num(item.kcal) ? num(item.kcal) : '') + '">' +
+      '<div class="chips" style="margin-top:9px">' + quick.map(k => '<button class="chip" data-act="quick-kcal" data-k="' + k + '">' + k + '</button>').join('') + '</div>' +
+      (S.ai && S.ai.base && S.ai.key && S.ai.model ? '<button class="btn btn-ghost-b btn-sm btn-full" style="margin-top:9px" data-act="ai-vision">' + icon('sparkle') + '根据照片 AI 估算</button>' : '') +
     '</div>' +
     '<div class="sheet-actions">' +
       (tmp.photo ? '<button class="btn btn-line" data-act="clear-photo" style="flex:0 0 auto;padding:0 16px">清除照片</button>' : '') +
@@ -1813,6 +2096,7 @@ document.addEventListener('click', async (e) => {
   }
 
   if(act === 'ai-analyze'){ await callAI(reportWeekOffset); return; }
+  if(act === 'ai-vision'){ await aiEstimatePhoto(); return; }
   if(act === 'copy-prompt'){
     const text = buildPrompt(reportWeekOffset);
     try{
@@ -1894,6 +2178,32 @@ document.addEventListener('click', async (e) => {
     toast('已清空');
     return;
   }
+});
+
+document.addEventListener('input', e => {
+  const t = e.target;
+  if(!t || !t.id) return;
+  if(t.id === 'mKcal'){ t.dataset.auto = '0'; return; }
+  if(t.id !== 'mNote') return;
+  clearTimeout(window.__foodTimer);
+  window.__foodTimer = setTimeout(() => {
+    const tip = $('#foodTip'), kEl = $('#mKcal');
+    if(!tip || !kEl) return;
+    const hits = estimateFoods(t.value);
+    if(hits.length){
+      const sum = hits.reduce((a, h) => a + h.kcal, 0);
+      tip.style.display = 'block';
+      tip.innerHTML = '按 ' + hits.map(h => '「' + esc(h.name) + '」' + (hits.length > 1 ? ' ' + h.kcal : '')).join(' + ') +
+        ' 估算 ≈ <b>' + sum + ' kcal</b>，可手动修改';
+      if(!kEl.value || kEl.dataset.auto === '1'){
+        kEl.value = sum;
+        kEl.dataset.auto = '1';
+      }
+    }else{
+      tip.style.display = 'none';
+      if(kEl.dataset.auto === '1'){ kEl.value = ''; kEl.dataset.auto = '0'; }
+    }
+  }, 320);
 });
 
 $('#sheetMask').addEventListener('click', closeSheet);
