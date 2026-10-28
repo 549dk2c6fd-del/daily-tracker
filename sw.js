@@ -1,5 +1,5 @@
 /* 轻盈日记 · 离线缓存 */
-const CACHE = 'qingying-v8';
+const CACHE = 'qingying-v9';
 const ASSETS = [
   './',
   './index.html',

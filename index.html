@@ -92,6 +92,7 @@ input,textarea,select{font-family:inherit;font-size:16px;color:var(--ink)}
   transition:transform .15s ease;
 }
 .icon-btn:active{transform:scale(.93)}
+.icon-btn.on{background:#FFF1F5;color:#B2526F;border-color:#FFE1EA}
 .icon-btn svg{width:20px;height:20px}
 
 .view{display:none;animation:fade .28s ease}
@@ -423,7 +424,10 @@ textarea.input{height:auto;min-height:76px;padding:12px 14px;resize:vertical;lin
         <p id="pageSub">—</p>
       </div>
     </div>
-    <button class="icon-btn" id="btnSettings" aria-label="设置"></button>
+    <div class="row" style="gap:8px">
+      <button class="icon-btn" id="btnCalendar" aria-label="日历"></button>
+      <button class="icon-btn" id="btnSettings" aria-label="设置"></button>
+    </div>
   </header>
 
   <main>
@@ -939,6 +943,7 @@ function go(view){
   currentView = view;
   $$('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + view));
   $$('.tab').forEach(t => t.classList.toggle('on', t.dataset.view === view));
+  const bc = $('#btnCalendar'); if(bc) bc.classList.toggle('on', view === 'calendar');
   const t = TITLES[view] || TITLES.today;
   $('#pageTitle').textContent = t[0];
   const d = new Date();
@@ -1585,6 +1590,7 @@ function renderCalendar(){
   }
 
   $('#view-calendar').innerHTML =
+  '<button class="btn btn-line btn-sm" style="margin-bottom:12px" data-act="go" data-view="today">' + icon('left') + '返回今天</button>' +
   '<div class="card">' +
     '<div class="cal-head">' +
       '<button class="nav-arrow" data-act="cal-month" data-delta="-1">' + icon('left') + '</button>' +
@@ -2442,6 +2448,8 @@ document.addEventListener('focusin', e => {
 (function init(){
   $('#brandMark').innerHTML = icon('leaf');
   $('#btnSettings').innerHTML = icon('gear');
+  $('#btnCalendar').innerHTML = icon('calendar');
+  $('#btnCalendar').addEventListener('click', () => go('calendar'));
   $('#btnSettings').addEventListener('click', openSettings);
 
   const TABS = [
@@ -2449,7 +2457,6 @@ document.addEventListener('focusin', e => {
     { view:'weight', label:'体重', icon:'scale' },
     { view:'meals', label:'饮食', icon:'bowl' },
     { view:'habits', label:'打卡', icon:'check' },
-    { view:'calendar', label:'日历', icon:'calendar' },
     { view:'report', label:'周报', icon:'chart' }
   ];
   $('#tabbar').innerHTML = TABS.map(t =>
