@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
-<meta name="theme-color" content="#FFFBFD" />
+<meta name="theme-color" content="#FFF9FB" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="轻盈日记" />
@@ -71,9 +71,9 @@ input,textarea,select{font-family:inherit;font-size:16px;color:var(--ink)}
 .topbar{
   position:sticky;top:0;z-index:20;
   display:flex;align-items:center;justify-content:space-between;gap:12px;
-  padding:calc(8px + env(safe-area-inset-top,0px)) 2px 12px;
+  padding:calc(4px + env(safe-area-inset-top,0px)) 2px 12px;
   backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-  background:linear-gradient(180deg,#FFFBFD 0%,#FFFBFD 74%,rgba(255,251,253,0) 100%);
+  background:linear-gradient(180deg,rgba(255,249,251,.78) 0%,rgba(255,250,252,.96) 58%,rgba(255,251,253,0) 100%);
   margin-bottom:2px;
 }
 .brand{display:flex;align-items:center;gap:11px;min-width:0}
@@ -153,6 +153,11 @@ input,textarea,select{font-family:inherit;font-size:16px;color:var(--ink)}
   pointer-events:none;
 }
 .hero > *{position:relative;z-index:1}
+.hero-note{position:absolute!important;right:16px;top:50px;width:112px;text-align:right;cursor:pointer;z-index:3}
+.hero-note .n-label{display:block;font-size:9.5px;color:#B9AFBC;letter-spacing:.6px;margin-bottom:3px}
+.hero-note .n-text{font-size:11.5px;line-height:1.55;color:#7B7E90;word-break:break-word;max-height:72px;overflow:hidden}
+.hero-note.empty .n-text{color:#C9C2CE;font-style:italic;font-size:11px}
+.hero-note:active{opacity:.65}
 .hero-label{font-size:12px;color:var(--ink-3);letter-spacing:.4px}
 .hero-weight{display:flex;align-items:flex-end;gap:7px;margin:2px 0 3px}
 .hero-num{font-size:46px;font-weight:800;letter-spacing:-2px;line-height:1.05;font-variant-numeric:tabular-nums}
@@ -164,10 +169,10 @@ input,textarea,select{font-family:inherit;font-size:16px;color:var(--ink)}
 .hero-actions{display:flex;gap:9px;margin-top:15px}
 .hero-actions .btn{flex:1}
 
-.stat4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}
-.stat4 .s{background:rgba(255,255,255,.75);border-radius:14px;padding:9px 6px;text-align:center}
-.stat4 .s b{display:block;font-size:16px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.4px}
-.stat4 .s span{font-size:10.5px;color:var(--ink-3)}
+.stat4{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-top:14px}
+.stat4 .s{background:rgba(255,255,255,.78);border-radius:14px;padding:8px 3px;text-align:center;min-width:0}
+.stat4 .s b{display:block;font-size:14px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat4 .s span{font-size:9.5px;color:var(--ink-3);white-space:nowrap;display:block;overflow:hidden;text-overflow:ellipsis}
 
 /* 环形进度 */
 .ring-wrap{position:relative;width:96px;height:96px;flex:0 0 96px}
@@ -481,6 +486,7 @@ const DEFAULT = () => ({
   profile: { start: null, target: null, height: null, kcalGoal: 1500, nickname: '' },
   weights: [],
   meals: {},
+  notes: {},
   habits: [
     { id: uid(), name: '喝够 8 杯水', icon: 'water', target: 7 },
     { id: uid(), name: '运动 30 分钟', icon: 'walk', target: 4 },
@@ -506,6 +512,7 @@ function load(){
       S.weights = Array.isArray(d.weights) ? d.weights : [];
       S.habits = Array.isArray(d.habits) ? d.habits : DEFAULT().habits;
       S.meals = d.meals && typeof d.meals === 'object' ? d.meals : {};
+      S.notes = d.notes && typeof d.notes === 'object' ? d.notes : {};
       S.checkins = d.checkins && typeof d.checkins === 'object' ? d.checkins : {};
     }
   }catch(e){ console.warn('读取数据失败', e); }
@@ -942,8 +949,10 @@ function renderToday(){
   const cur = weightOn(d);
   const last = latestWeight();
   const pw = prevWeight(d);
+  const yRec = weightOn(addDays(d, -1));
   const kg = cur ? num(cur.kg) : (last ? num(last.kg) : null);
   const diff = (cur && pw) ? r1(kg - num(pw.kg)) : null;
+  const diffY = (cur && yRec) ? r1(kg - num(yRec.kg)) : null;
   const eaten = dayKcal(d);
   const goal = num(S.profile.kcalGoal) || 1500;
   const lost = totalLost();
@@ -955,10 +964,14 @@ function renderToday(){
   const nick = S.profile.nickname ? '，' + esc(S.profile.nickname) : '';
 
   let deltaHTML = '<span class="delta">今天还没称重</span>';
-  if(diff !== null){
-    if(diff < 0) deltaHTML = '<span class="delta down">' + icon('down') + ' ' + Math.abs(diff).toFixed(1) + ' kg</span>';
-    else if(diff > 0) deltaHTML = '<span class="delta up">' + icon('up') + ' ' + diff.toFixed(1) + ' kg</span>';
-    else deltaHTML = '<span class="delta">与上次持平</span>';
+  if(cur){
+    if(diffY !== null){
+      if(diffY < 0) deltaHTML = '<span class="delta down">' + icon('down') + ' 较昨日 ' + Math.abs(diffY).toFixed(1) + ' kg</span>';
+      else if(diffY > 0) deltaHTML = '<span class="delta up">' + icon('up') + ' 较昨日 ' + diffY.toFixed(1) + ' kg</span>';
+      else deltaHTML = '<span class="delta">较昨日持平</span>';
+    }else{
+      deltaHTML = '<span class="delta">昨日未记录</span>';
+    }
   }
 
   const wHTML = kg != null
@@ -967,6 +980,7 @@ function renderToday(){
 
   const stats = [
     { b: S.profile.start ? num(S.profile.start).toFixed(1) : (sortedWeights().length? num(sortedWeights()[0].kg).toFixed(1) : '--'), s: '起始体重' },
+    { b: diffY === null ? '--' : (diffY > 0 ? '+' : '') + diffY.toFixed(1), s: '较昨日', c: diffY === null ? '' : (diffY < 0 ? '#3C8A6A' : diffY > 0 ? '#B8526E' : '') },
     { b: lost > 0 ? lost.toFixed(1) : '0.0', s: '累计减重' },
     { b: S.profile.target ? num(S.profile.target).toFixed(1) : '--', s: '目标体重' },
     { b: checked + '/' + checkTotal, s: '今日打卡' }
@@ -1000,8 +1014,14 @@ function renderToday(){
   const unlocked = unlockedCount();
   const nextBadge = badgeAt(unlocked + 1);
 
+  const todayNote = (S.notes || {})[d] || '';
+
   $('#view-today').innerHTML =
   '<div class="hero">' +
+    '<div class="hero-note ' + (todayNote ? '' : 'empty') + '" data-act="edit-note">' +
+      '<span class="n-label">今天的一句</span>' +
+      '<div class="n-text">' + (todayNote ? esc(todayNote) : '点这里写一句') + '</div>' +
+    '</div>' +
     '<div class="hero-label">' + hello + nick + ' · ' + (cur ? '已记录今日体重' : '今天想称一称吗') + '</div>' +
     wHTML +
     '<div class="row" style="margin-top:6px;gap:8px;flex-wrap:wrap">' + deltaHTML +
@@ -1012,7 +1032,7 @@ function renderToday(){
       '<button class="btn btn-primary" data-act="add-weight">' + icon('scale') + '记录体重</button>' +
       '<button class="btn btn-blue" data-act="go" data-view="meals">' + icon('camera') + '记一餐</button>' +
     '</div>' +
-    '<div class="stat4">' + stats.map(s => '<div class="s"><b>' + s.b + '</b><span>' + s.s + '</span></div>').join('') + '</div>' +
+    '<div class="stat4">' + stats.map(s => '<div class="s"><b' + (s.c ? ' style="color:' + s.c + '"' : '') + '>' + s.b + '</b><span>' + s.s + '</span></div>').join('') + '</div>' +
   '</div>' +
 
   '<div class="card">' +
@@ -1736,7 +1756,10 @@ function openWeightSheet(){
     '<h3>记录体重</h3><p class="sheet-sub">固定时间称重，趋势才准</p>' +
     '<div class="field"><label>日期</label><input class="input" type="date" id="wDate" value="' + d + '" max="' + d + '"></div>' +
     '<div class="field"><label>体重（kg）</label><input class="input" id="wKg" type="number" step="0.1" min="20" max="300" inputmode="decimal" placeholder="例如 58.5" value="' + (val || '') + '"></div>' +
-    '<div class="field"><label>备注（可选）</label><input class="input" id="wNote" placeholder="例如：生理期 / 聚餐后 / 早上空腹" value="' + esc(w && w.note ? w.note : '') + '"></div>' +
+    '<div class="field"><label>今天想说的话（可选）</label>' +
+    '<textarea class="input" id="wNote" maxlength="60" style="min-height:66px" placeholder="比如：今天没吃夜宵，感觉自己很厉害">' + esc((S.notes || {})[d] || (w && w.note ? w.note : '')) + '</textarea>' +
+    '<div class="hint">会显示在首页右上角，最多 60 字。</div>' +
+  '</div>' +
     '<div class="hint">同一天重复记录会覆盖上一条。</div>' +
     '<div class="sheet-actions"><button class="btn btn-line" data-act="close-sheet">取消</button>' +
     '<button class="btn btn-primary" data-act="save-weight">保存</button></div>'
@@ -1748,6 +1771,19 @@ function mealSheetTitle(key, idx){
   if(key === 'snacks') return idx > -1 ? '编辑加餐' : '记录加餐';
   const m = MEALS.find(x => x.key === key);
   return '记录' + (m ? m.name : '');
+}
+
+function openNoteSheet(){
+  const d = today();
+  const cur = (S.notes || {})[d] || '';
+  openSheet(
+    '<h3>今天想说的话</h3><p class="sheet-sub">记录完体重的这一刻，写一句给自己</p>' +
+    '<div class="field"><textarea class="input" id="noteText" maxlength="60" style="min-height:96px" placeholder="比如：今天没吃夜宵，感觉自己很棒">' + esc(cur) + '</textarea>' +
+    '<div class="hint">最多 60 字，会显示在首页右上角。</div></div>' +
+    '<div class="sheet-actions"><button class="btn btn-line" data-act="close-sheet">取消</button>' +
+    '<button class="btn btn-primary" data-act="save-note">保存</button></div>'
+  );
+  setTimeout(() => { const el = $('#noteText'); if(el) el.focus(); }, 260);
 }
 
 function openMealSheet(date, key, idx){
@@ -1915,6 +1951,15 @@ document.addEventListener('click', async (e) => {
   if(act === 'tab'){ go(el.dataset.view); return; }
   if(act === 'close-sheet'){ closeSheet(); return; }
   if(act === 'add-weight'){ openWeightSheet(); return; }
+  if(act === 'edit-note'){ openNoteSheet(); return; }
+  if(act === 'save-note'){
+    const t = ($('#noteText') ? $('#noteText').value : '').trim();
+    const d = today();
+    if(t) S.notes[d] = t; else delete S.notes[d];
+    save(); closeSheet(); renderToday();
+    toast(t ? '已记下这一句' : '已清空');
+    return;
+  }
   if(act === 'open-settings'){ openSettings(); return; }
 
   if(act === 'save-weight'){
@@ -1922,6 +1967,7 @@ document.addEventListener('click', async (e) => {
     const kg = num($('#wKg').value);
     if(!kg || kg < 20 || kg > 300){ toast('请输入 20~300 之间的体重'); return; }
     const note = $('#wNote').value.trim();
+    if(note) S.notes[d] = note; else delete S.notes[d];
     const ex = S.weights.find(w => w.d === d);
     if(ex){ ex.kg = r1(kg); ex.note = note; ex.t = Date.now(); }
     else S.weights.push({ id: uid(), d: d, kg: r1(kg), note: note, t: Date.now() });
