@@ -1,9 +1,10 @@
 /* 轻盈日记 · 离线缓存 */
-const CACHE = 'qingying-v3';
+const CACHE = 'qingying-v4';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
+  './apple-touch-icon.png',
   './icon-192.png',
   './icon-512.png'
 ];
