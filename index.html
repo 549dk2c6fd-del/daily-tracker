@@ -294,6 +294,32 @@ input,textarea,select{font-family:inherit;font-size:16px;color:var(--ink)}
 .progress{height:9px;border-radius:20px;background:#F2EDF1;overflow:hidden}
 .progress i{display:block;height:100%;border-radius:20px;background:linear-gradient(90deg,#FFD0DE,#C4DCFB);transition:width .5s ease}
 
+/* ---------- 日历页 ---------- */
+.cal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+.cal-month{font-size:15px;font-weight:800;letter-spacing:-.2px}
+.cal-month span{font-size:11px;color:var(--ink-3);font-weight:500;margin-left:5px}
+.cal-week{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:7px}
+.cal-wd{text-align:center;font-size:10px;color:var(--ink-3)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.cal-cell{aspect-ratio:1;border-radius:13px;background:#FAF7FA;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:12.5px;font-weight:600;color:#C9C2CE;position:relative;border:1.5px solid transparent;transition:transform .12s}
+.cal-cell:active{transform:scale(.93)}
+.cal-cell.blank{background:transparent;pointer-events:none}
+.cal-cell.ok{background:#EAF7F1;color:#337B5D;border-color:#CFEBDD}
+.cal-cell.over{background:#FFF0F3;color:#B8526E;border-color:#F8D8E0}
+.cal-cell.cheat{background:#FFF7E8;color:#9A6B1F;border-color:#F5E2B6}
+.cal-cell.today{box-shadow:0 0 0 2px #BFD8FA inset}
+.cal-cell .mk{font-size:9px;font-weight:700;line-height:1;opacity:.85}
+.cal-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:14px;font-size:11px;color:var(--ink-2)}
+.cal-legend i{display:inline-block;width:9px;height:9px;border-radius:4px;margin-right:4px;vertical-align:-1px}
+.cal-legend i.ok{background:#BFE7D3}
+.cal-legend i.over{background:#F8C6D3}
+.cal-legend i.cheat{background:#F3DCA4}
+.cal-legend i.none{background:#EDE8EF}
+.cal-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.cal-sum .s{background:#FBF8FB;border-radius:14px;padding:9px 4px;text-align:center}
+.cal-sum .s b{display:block;font-size:16px;font-weight:800;font-variant-numeric:tabular-nums}
+.cal-sum .s span{font-size:10px;color:var(--ink-3)}
+
 /* ---------- 周报页 ---------- */
 .score-hero{display:flex;align-items:center;gap:16px}
 .score-ring{position:relative;width:104px;height:104px;flex:0 0 104px}
@@ -405,6 +431,7 @@ textarea.input{height:auto;min-height:76px;padding:12px 14px;resize:vertical;lin
     <section class="view" id="view-weight"></section>
     <section class="view" id="view-meals"></section>
     <section class="view" id="view-habits"></section>
+    <section class="view" id="view-calendar"></section>
     <section class="view" id="view-report"></section>
     <section class="view" id="view-achievements"></section>
   </main>
@@ -487,6 +514,7 @@ const DEFAULT = () => ({
   weights: [],
   meals: {},
   notes: {},
+  cheatDays: {},
   habits: [
     { id: uid(), name: '喝够 8 杯水', icon: 'water', target: 7 },
     { id: uid(), name: '运动 30 分钟', icon: 'walk', target: 4 },
@@ -513,6 +541,7 @@ function load(){
       S.habits = Array.isArray(d.habits) ? d.habits : DEFAULT().habits;
       S.meals = d.meals && typeof d.meals === 'object' ? d.meals : {};
       S.notes = d.notes && typeof d.notes === 'object' ? d.notes : {};
+      S.cheatDays = d.cheatDays && typeof d.cheatDays === 'object' ? d.cheatDays : {};
       S.checkins = d.checkins && typeof d.checkins === 'object' ? d.checkins : {};
     }
   }catch(e){ console.warn('读取数据失败', e); }
@@ -898,6 +927,7 @@ const TITLES = {
   weight: ['体重', '记录每一次变化'],
   meals: ['饮食', '吃得明白，瘦得轻松'],
   habits: ['打卡', '小习惯，大改变'],
+  calendar: ['日历', '每一天都算数'],
   report: ['周报', '回顾一周，轻装出发'],
   achievements: ['成就', '每 1kg 都值得庆祝']
 };
@@ -924,6 +954,7 @@ function renderView(view){
   else if(view === 'weight') renderWeight();
   else if(view === 'meals') renderMeals();
   else if(view === 'habits') renderHabits();
+  else if(view === 'calendar') renderCalendar();
   else if(view === 'report') renderReport();
   else if(view === 'achievements') renderAchievements();
 }
@@ -1015,6 +1046,7 @@ function renderToday(){
   const nextBadge = badgeAt(unlocked + 1);
 
   const todayNote = (S.notes || {})[d] || '';
+  const isCheatToday = !!(S.cheatDays || {})[d];
 
   $('#view-today').innerHTML =
   '<div class="hero">' +
@@ -1037,7 +1069,7 @@ function renderToday(){
 
   '<div class="card">' +
     '<div class="card-head"><div class="card-title">' + icon('bowl') + '今日摄入</div>' +
-      '<span class="card-sub">目标 ' + goal + ' kcal</span></div>' +
+      '<span class="card-sub">' + (isCheatToday ? '<b style="color:#9A6B1F">今天放纵日 · 不用记</b>' : '目标 ' + goal + ' kcal') + '</span></div>' +
     '<div class="row" style="gap:16px">' +
       ringHTML(Math.min(1.4, eaten / goal), eaten, '已摄入 kcal') +
       '<div class="kcal-rows">' +
@@ -1237,6 +1269,7 @@ function renderMeals(){
   const goal = num(S.profile.kcalGoal) || 1500;
   const isToday = d === today();
   const over = total > goal;
+  const isCheatDay = !!(S.cheatDays || {})[d];
 
   const mealCards = ['breakfast','lunch','dinner'].map(k => {
     const meta = MEALS.find(x => x.key === k);
@@ -1275,6 +1308,7 @@ function renderMeals(){
     '<button class="nav-arrow" data-act="meal-day" data-delta="1" ' + (isToday ? 'disabled style="opacity:.35"' : '') + '>' + icon('right') + '</button>' +
   '</div>' +
 
+  (isCheatDay ? '<div class="card" style="padding:13px 16px;background:linear-gradient(135deg,#FFF9EC,#FFFDF6);border:1px solid #F6E7C4"><div class="row" style="gap:10px"><div style="color:#C99433;flex:0 0 20px">' + icon('heart') + '</div><div style="font-size:12.5px;line-height:1.6;color:#8A6A2A">今天是<b>放纵日</b>，不用记录饮食。想吃就好好吃，明天继续就好。</div></div></div>' : '') +
   '<div class="card">' +
     '<div class="row" style="gap:16px">' +
       ringHTML(Math.min(1.4, total / goal), total, '今日摄入 kcal') +
@@ -1396,10 +1430,11 @@ function buildReport(offset){
   const delta = (wStart != null && wEnd != null) ? r1(wEnd - wStart) : null;
 
   // 饮食
-  const kcalDays = days.map(d => ({ d: d, kcal: dayKcal(d), cnt: dayMealCount(d) })).filter(x => x.kcal > 0);
+  const cheatInWeek = days.filter(x => (S.cheatDays || {})[x.d]).length;
+  const kcalDays = days.map(d => ({ d: d, kcal: dayKcal(d), cnt: dayMealCount(d) })).filter(x => x.kcal > 0 && !(S.cheatDays || {})[x.d]);
   const avgKcal = kcalDays.length ? Math.round(kcalDays.reduce((a,x) => a + x.kcal, 0) / kcalDays.length) : 0;
   const maxDay = kcalDays.slice().sort((a,b) => b.kcal - a.kcal)[0] || null;
-  const dietRate = kcalDays.length / 7;
+  const dietRate = kcalDays.length / Math.max(1, 7 - cheatInWeek);
 
   // 打卡
   const rate = weekCheckinRate(start);
@@ -1425,7 +1460,7 @@ function buildReport(offset){
   const wDays = wRecs.length;
   sRecord = Math.round(Math.min(1, wDays/7) * 11 + Math.min(1, dietRate) * 14);
 
-  if(!kcalDays.length) sDiet = 9;
+  if(!kcalDays.length) sDiet = (7 - cheatInWeek) <= 0 ? 25 : 9;
   else{
     const r = avgKcal / goal;
     if(avgKcal < goal * 0.6) sDiet = 20;
@@ -1464,9 +1499,10 @@ function buildReport(offset){
     else if(diff < 0) t += '比目标低约 ' + Math.abs(diff) + ' kcal。' + (avgKcal < goal * 0.65 ? '吃得太少容易掉肌肉、也容易在某一天报复性进食，建议把热量补回一部分。' : '控制得比较克制，注意蛋白质和蔬菜要吃够。');
     else t += '比目标高约 ' + diff + ' kcal，不算失控，稍微收一收就能回到区间。';
     if(maxDay) t += '其中 <strong>' + WD[parseD(maxDay.d).getDay()] + '</strong> 吃得最多（' + maxDay.kcal + ' kcal），可以留意一下那天的场景。';
+    if(cheatInWeek) t += '（本周有 ' + cheatInWeek + ' 天放纵日，已从饮食评分中排除。）';
     P.push(t);
   }else{
-    P.push('本周还没有饮食记录。不记录不等于没吃，但记录能让你看见「不知不觉吃进去」的那部分——这往往就是减不下来的真正原因。');
+    P.push(cheatInWeek >= 7 ? '本周全部设为放纵日，就没有参与饮食评分了。偶尔放松没问题，但连续整周放松，体重容易回升。' : '本周还没有饮食记录。不记录不等于没吃，但记录能让你看见「不知不觉吃进去」的那部分——这往往就是减不下来的真正原因。');
   }
 
   if(S.habits.length){
@@ -1509,6 +1545,105 @@ function buildReport(offset){
     total: total, grade: grade, gradeColor: gradeColor,
     analysis: P, summary: summary, tips: finalTips
   };
+}
+
+/* ================= 渲染：日历 ================= */
+let calYM = new Date();
+
+function renderCalendar(){
+  const y = calYM.getFullYear(), m = calYM.getMonth();
+  const firstWd = (new Date(y, m, 1).getDay() + 6) % 7;
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  const goal = num(S.profile.kcalGoal) || 1500;
+  const now = new Date();
+  const isThisMonth = y === now.getFullYear() && m === now.getMonth();
+
+  let ok = 0, cheat = 0, rec = 0;
+  const cells = [];
+  for(let i = 0; i < firstWd; i++) cells.push('<div class="cal-cell blank"></div>');
+
+  for(let day = 1; day <= daysInMonth; day++){
+    const date = y + '-' + pad(m + 1) + '-' + pad(day);
+    const kcal = dayKcal(date);
+    const isCheat = !!(S.cheatDays || {})[date];
+    const isRecorded = kcal > 0 || dayMealCount(date) > 0;
+    const isToday = date === today();
+
+    let cls = 'none', mk = '';
+    if(isCheat){ cls = 'cheat'; mk = '放'; cheat++; }
+    else if(kcal > 0){
+      if(kcal <= goal){ cls = 'ok'; ok++; }
+      else cls = 'over';
+    }
+    if(isRecorded || isCheat) rec++;
+
+    cells.push(
+      '<button class="cal-cell ' + cls + (isToday ? ' today' : '') + '" data-act="day-detail" data-date="' + date + '">' +
+        '<span>' + day + '</span>' + (mk ? '<span class="mk">' + mk + '</span>' : '') +
+      '</button>'
+    );
+  }
+
+  $('#view-calendar').innerHTML =
+  '<div class="card">' +
+    '<div class="cal-head">' +
+      '<button class="nav-arrow" data-act="cal-month" data-delta="-1">' + icon('left') + '</button>' +
+      '<div class="cal-month">' + y + ' 年 ' + (m + 1) + ' 月' + (isThisMonth ? '<span>本月</span>' : '') + '</div>' +
+      '<button class="nav-arrow" data-act="cal-month" data-delta="1" ' + (isThisMonth ? 'disabled style="opacity:.35"' : '') + '>' + icon('right') + '</button>' +
+    '</div>' +
+    '<div class="cal-week">' + ['一','二','三','四','五','六','日'].map(w => '<div class="cal-wd">' + w + '</div>').join('') + '</div>' +
+    '<div class="cal-grid">' + cells.join('') + '</div>' +
+    '<div class="cal-legend">' +
+      '<span><i class="ok"></i>热量达标</span>' +
+      '<span><i class="over"></i>超出目标</span>' +
+      '<span><i class="cheat"></i>放纵日</span>' +
+      '<span><i class="none"></i>未记录</span>' +
+    '</div>' +
+    '<div class="cal-sum">' +
+      '<div class="s"><b style="color:#337B5D">' + ok + '</b><span>达标天数</span></div>' +
+      '<div class="s"><b>' + rec + '</b><span>有记录</span></div>' +
+      '<div class="s"><b style="color:#9A6B1F">' + cheat + '</b><span>放纵日</span></div>' +
+    '</div>' +
+  '</div>' +
+
+  '<div class="card">' +
+    '<div class="card-head"><div class="card-title">' + icon('calendar') + '点任意一天</div>' +
+      '<span class="card-sub">查看 / 标记放纵日</span></div>' +
+    '<div style="font-size:12.5px;line-height:1.8;color:#7B7E90">' +
+      '长期严格控制容易反弹，每周留 1 天放松反而更容易坚持。设为<b style="color:#9A6B1F">放纵日</b>后，这天不需要记录饮食，也不会拉低周报的饮食分。' +
+    '</div>' +
+  '</div>';
+}
+
+function openDaySheet(date){
+  const kcal = dayKcal(date);
+  const goal = num(S.profile.kcalGoal) || 1500;
+  const w = weightOn(date);
+  const isCheat = !!(S.cheatDays || {})[date];
+  const ck = S.habits.filter(h => isChecked(date, h.id)).length;
+  const note = (S.notes || {})[date] || '';
+  const dayKcalAll = dayMealCount(date);
+
+  openSheet(
+    '<h3>' + mdLabel(date) + ' ' + WD[parseD(date).getDay()] + '</h3>' +
+    '<p class="sheet-sub">' + (date === today() ? '今天' : '这一天') + '的记录</p>' +
+    '<div class="stat4" style="margin-top:2px;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">' +
+      '<div class="s" style="background:#FBF8FB"><b>' + (w ? num(w.kg).toFixed(1) : '--') + '</b><span>体重 kg</span></div>' +
+      '<div class="s" style="background:#FBF8FB"><b>' + (kcal || '--') + '</b><span>摄入 kcal</span></div>' +
+      '<div class="s" style="background:#FBF8FB"><b>' + ck + '/' + S.habits.length + '</b><span>打卡</span></div>' +
+    '</div>' +
+    (kcal && !isCheat && kcal > goal ? '<div class="hint" style="color:#B8526E;margin-top:10px">这天超出目标 ' + (kcal - goal) + ' kcal</div>' : '') +
+    (note ? '<div class="hint" style="margin-top:10px">「' + esc(note) + '」</div>' : '') +
+    '<div class="divider"></div>' +
+    '<button class="btn ' + (isCheat ? 'btn-ghost' : 'btn-line') + ' btn-full" data-act="toggle-cheat" data-date="' + date + '">' +
+      (isCheat ? '取消放纵日' : '设为放纵日（这天不记饮食）') +
+    '</button>' +
+    '<div class="hint" style="margin-top:8px;text-align:center">放纵日的饮食记录不会被计入周报的饮食分</div>' +
+    '<div class="sheet-actions">' +
+      '<button class="btn btn-line" data-act="close-sheet">关闭</button>' +
+      '<button class="btn btn-primary" data-act="jump-meals" data-date="' + date + '">看这天的饮食</button>' +
+    '</div>'
+  );
 }
 
 function renderReport(){
@@ -2147,6 +2282,43 @@ document.addEventListener('click', async (e) => {
     return;
   }
 
+  if(act === 'cal-month'){
+    const delta = parseInt(el.dataset.delta, 10);
+    const d = new Date(calYM.getFullYear(), calYM.getMonth() + delta, 1);
+    const now = new Date();
+    if(d.getFullYear() > now.getFullYear() || (d.getFullYear() === now.getFullYear() && d.getMonth() > now.getMonth())) return;
+    calYM = d;
+    renderCalendar();
+    return;
+  }
+
+  if(act === 'day-detail'){
+    openDaySheet(el.dataset.date);
+    return;
+  }
+
+  if(act === 'toggle-cheat'){
+    const d = el.dataset.date;
+    if(!S.cheatDays) S.cheatDays = {};
+    if(S.cheatDays[d]) delete S.cheatDays[d];
+    else S.cheatDays[d] = true;
+    save();
+    renderCalendar();
+    if(d === today()){ renderToday(); }
+    if(currentView === 'report') renderReport();
+    openDaySheet(d);
+    toast(S.cheatDays[d] ? '已设为放纵日' : '已取消放纵日');
+    return;
+  }
+
+  if(act === 'jump-meals'){
+    const d = el.dataset.date;
+    mealDate = d;
+    closeSheet();
+    setTimeout(() => go('meals'), 120);
+    return;
+  }
+
   if(act === 'ai-analyze'){ await callAI(reportWeekOffset); return; }
   if(act === 'ai-vision'){ await aiEstimatePhoto(); return; }
   if(act === 'copy-prompt'){
@@ -2277,6 +2449,7 @@ document.addEventListener('focusin', e => {
     { view:'weight', label:'体重', icon:'scale' },
     { view:'meals', label:'饮食', icon:'bowl' },
     { view:'habits', label:'打卡', icon:'check' },
+    { view:'calendar', label:'日历', icon:'calendar' },
     { view:'report', label:'周报', icon:'chart' }
   ];
   $('#tabbar').innerHTML = TABS.map(t =>
